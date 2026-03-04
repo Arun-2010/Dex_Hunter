@@ -1,0 +1,9 @@
+{
+  "appId": "app.lovable.1568ee56182a49f0b6582327f57778c2",
+  "appName": "DexHunter",
+  "webDir": "dist",
+  "server": {
+    "url": "https://1568ee56-182a-49f0-b658-2327f57778c2.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  }
+}

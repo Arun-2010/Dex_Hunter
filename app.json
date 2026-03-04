@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "DexHunter",
+    "slug": "ar-scam-quest",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for AR scanning."
+        }
+      ]
+    ]
+  }
+}
