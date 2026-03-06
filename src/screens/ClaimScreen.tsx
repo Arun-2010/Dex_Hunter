@@ -86,28 +86,29 @@ export default function ClaimScreen() {
             <View style={{ marginTop: 12 }}>
               {Object.keys(tokenProgressFiltered).length > 0 ? (
                 Object.entries(tokenProgressFiltered).map(([key, info]) => {
-                  const p = Math.min(1, info.count / REQUIRED_TOKENS);
-                  const unlocked = info.count >= REQUIRED_TOKENS;
-                  const remainingForThis = Math.max(0, REQUIRED_TOKENS - info.count);
                   const label = info.name || info.symbol || key;
                   return (
                     <View key={key} style={styles.tokenCard}>
                       <View style={styles.rowBetween}>
                         <Text style={styles.tokenName}>{label}</Text>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                          {unlocked ? <Text style={styles.tokenUnlocked}>Unlocked</Text> : null}
+                          {info.count >= REQUIRED_TOKENS ? (
+                            <Text style={styles.tokenUnlocked}>Unlocked</Text>
+                          ) : null}
                           <Text style={styles.tokenCount}>
                             {info.count} / {REQUIRED_TOKENS}
                           </Text>
                         </View>
                       </View>
                       <View style={styles.tokenProgressTrack}>
-                        <View style={[styles.tokenProgressFill, { width: `${p * 100}%` }]} />
+                        <View
+                          style={[styles.tokenProgressFill, { width: `${Math.min(1, info.count / REQUIRED_TOKENS) * 100}%` }]}
+                        />
                       </View>
                       <Text style={styles.tokenStatus}>
-                        {unlocked
+                        {info.count >= REQUIRED_TOKENS
                           ? "Claim unlocked for this token."
-                          : `Collect ${remainingForThis} more to unlock claim for this token.`}
+                          : `Collect ${Math.max(0, REQUIRED_TOKENS - info.count)} more to unlock claim for this token.`}
                       </Text>
                     </View>
                   );

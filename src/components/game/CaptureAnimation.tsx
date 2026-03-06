@@ -20,7 +20,7 @@ export default function CaptureAnimation({
   const t = useSharedValue(0);
 
   useEffect(() => {
-    t.value = withTiming(1, { duration: 650, easing: Easing.out(Easing.cubic) }, (finished) => {
+    t.value = withTiming(1, { duration: 750, easing: Easing.out(Easing.cubic) }, (finished) => {
       if (finished && onDone) {
         runOnJS(onDone)();
       }
@@ -36,10 +36,16 @@ export default function CaptureAnimation({
     transform: [{ scale: 0.35 + t.value * 2.0 }],
   }));
 
+  const sparkle = useAnimatedStyle(() => ({
+    opacity: 1 - t.value,
+    transform: [{ scale: 0.4 + t.value }],
+  }));
+
   return (
     <View pointerEvents="none" style={[styles.wrap, { width: size, height: size }]}>
       <Animated.View style={[styles.ring, styles.ringA, ring1]} />
       <Animated.View style={[styles.ring, styles.ringB, ring2]} />
+      <Animated.View style={[styles.sparkle, sparkle]} />
       <View style={styles.core} />
     </View>
   );
@@ -56,6 +62,18 @@ const styles = StyleSheet.create({
   },
   ringA: { borderColor: "rgba(0,255,163,0.65)", shadowColor: COLORS.neonGreen, shadowOpacity: 0.4, shadowRadius: 22, shadowOffset: { width: 0, height: 0 } },
   ringB: { borderColor: "rgba(123,92,255,0.55)", shadowColor: COLORS.electricPurple, shadowOpacity: 0.35, shadowRadius: 22, shadowOffset: { width: 0, height: 0 } },
+  sparkle: {
+    position: "absolute",
+    width: "40%",
+    height: "40%",
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.75)",
+    shadowColor: "#FFFFFF",
+    shadowOpacity: 0.6,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 0 },
+  },
   core: { width: 14, height: 14, borderRadius: 14, backgroundColor: COLORS.neonGreen, shadowColor: COLORS.neonGreen, shadowOpacity: 0.7, shadowRadius: 18, shadowOffset: { width: 0, height: 0 } },
 });
 

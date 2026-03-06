@@ -1,21 +1,10 @@
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 
 import { COLORS } from "../../utils/theme";
 
 export default function RadarWidget({ tokenCount = 0, size = 96 }: { tokenCount?: number; size?: number }) {
-  const rot = useSharedValue(0);
-
-  React.useEffect(() => {
-    rot.value = withRepeat(withTiming(1, { duration: 2400, easing: Easing.linear }), -1, false);
-  }, [rot]);
-
-  const sweepStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rot.value * 360}deg` }],
-  }));
-
   const dots = useMemo(
     () =>
       Array.from({ length: Math.min(tokenCount, 5) }).map(() => ({
@@ -34,14 +23,14 @@ export default function RadarWidget({ tokenCount = 0, size = 96 }: { tokenCount?
       <View style={[styles.vLine, { height: size }]} />
       <View style={[styles.hLine, { width: size }]} />
 
-      <Animated.View style={[styles.sweepWrap, sweepStyle]}>
+      <View style={styles.sweepWrap}>
         <LinearGradient
           colors={["rgba(0,255,163,0.0)", "rgba(0,255,163,0.22)"]}
           start={{ x: 0.5, y: 1 }}
           end={{ x: 0.5, y: 0 }}
           style={[styles.sweep, { height: size / 2 }]}
         />
-      </Animated.View>
+      </View>
 
       {dots.map((d, i) => (
         <View

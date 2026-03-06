@@ -1,6 +1,5 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 import { useGameStore } from "../../store/gameStore";
 import { COLORS } from "../../utils/theme";
@@ -10,16 +9,6 @@ export default function XPBar() {
   const xpInLevel = xp % 100;
   const progress = xpInLevel / 100;
 
-  const p = useSharedValue(0);
-
-  useEffect(() => {
-    p.value = withTiming(progress, { duration: 650, easing: Easing.out(Easing.cubic) });
-  }, [p, progress]);
-
-  const fillStyle = useAnimatedStyle(() => ({
-    width: `${Math.round(p.value * 100)}%`,
-  }));
-
   return (
     <View>
       <View style={styles.row}>
@@ -27,7 +16,7 @@ export default function XPBar() {
         <Text style={styles.hud}>{xpInLevel}/100 XP</Text>
       </View>
       <View style={styles.track}>
-        <Animated.View style={[styles.fill, fillStyle]} />
+        <View style={[styles.fill, { width: `${Math.round(progress * 100)}%` }]} />
       </View>
     </View>
   );

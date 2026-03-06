@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useMemo } from "react";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -14,8 +14,6 @@ import type { RootStackParamList } from "../navigation/types";
 export default function AuthScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { signIn, walletConnected, walletAddress, connectWallet } = useGameStore();
-  const [pickerVisible, setPickerVisible] = useState(false);
-  const [selectedWalletName, setSelectedWalletName] = useState<string | null>(null);
 
   const shortAddress = useMemo(() => {
     if (!walletAddress) return "";
@@ -44,7 +42,7 @@ export default function AuthScreen() {
             <>
               <NeonButton
                 title="Connect Wallet"
-                onPress={() => setPickerVisible(true)}
+                onPress={connectWallet}
                 fullWidth
                 left={<Ionicons name="wallet" size={18} color={COLORS.neonGreen} />}
               />
@@ -63,7 +61,7 @@ export default function AuthScreen() {
               <NeonButton
                 title="Enter DexHunter"
                 onPress={() => {
-                  signIn(walletAddress ?? selectedWalletName ?? "WalletUser");
+                  signIn(walletAddress ?? "WalletUser");
                   navigation.replace("Main");
                 }}
                 fullWidth
@@ -74,34 +72,6 @@ export default function AuthScreen() {
           )}
         </GlassCard>
 
-        <Modal
-          transparent
-          animationType="fade"
-          visible={pickerVisible}
-          onRequestClose={() => setPickerVisible(false)}
-        >
-          <Pressable style={styles.modalOverlay} onPress={() => setPickerVisible(false)}>
-            <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
-              <Text style={styles.modalTitle}>Select Injected Wallet</Text>
-              <Text style={styles.modalSub}>Mock list of available wallets on this device.</Text>
-              <View style={{ height: 16 }} />
-              {["Phantom", "Backpack", "MetaMask"].map((name) => (
-                <Pressable
-                  key={name}
-                  style={styles.modalOption}
-                  onPress={() => {
-                    setSelectedWalletName(name);
-                    connectWallet();
-                    setPickerVisible(false);
-                  }}
-                >
-                  <Ionicons name="wallet" size={18} color={COLORS.neonGreen} />
-                  <Text style={styles.modalOptionText}>{name}</Text>
-                </Pressable>
-              ))}
-            </Pressable>
-          </Pressable>
-        </Modal>
       </KeyboardAvoidingView>
     </ScreenBackground>
   );
@@ -133,35 +103,5 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 999, backgroundColor: COLORS.neonGreen },
   connectedTitle: { color: COLORS.text, fontWeight: "900" },
   connectedAddr: { color: COLORS.textMuted, marginTop: 2 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.75)",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  modalCard: {
-    width: "100%",
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-    backgroundColor: "rgba(10,15,44,0.98)",
-    padding: 18,
-  },
-  modalTitle: { color: COLORS.text, fontSize: 16, fontWeight: "900" },
-  modalSub: { color: COLORS.textMuted, marginTop: 4, fontSize: 12 },
-  modalOption: {
-    marginTop: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-    backgroundColor: "rgba(0,0,0,0.35)",
-  },
-  modalOptionText: { color: COLORS.text, fontWeight: "800" },
 });
 

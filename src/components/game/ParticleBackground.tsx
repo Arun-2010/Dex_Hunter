@@ -1,12 +1,5 @@
 import React, { useMemo } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
 
 import { COLORS } from "../../utils/theme";
 
@@ -30,21 +23,8 @@ export default function ParticleBackground() {
     []
   );
 
-  const rot = useSharedValue(0);
-  const glow = useSharedValue(0.6);
-
-  React.useEffect(() => {
-    rot.value = withRepeat(withTiming(1, { duration: 22000, easing: Easing.linear }), -1, false);
-    glow.value = withRepeat(withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.quad) }), -1, true);
-  }, [glow, rot]);
-
-  const containerStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rot.value * 360}deg` }],
-    opacity: 0.75 + (glow.value - 0.6) * 0.2,
-  }));
-
   return (
-    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, containerStyle]}>
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       {dots.map((d, idx) => (
         <View
           key={idx}
@@ -66,7 +46,7 @@ export default function ParticleBackground() {
           ]}
         />
       ))}
-    </Animated.View>
+    </View>
   );
 }
 

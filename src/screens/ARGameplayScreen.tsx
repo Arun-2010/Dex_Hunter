@@ -4,16 +4,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Accelerometer } from "expo-sensors";
-import Animated, {
-  Easing,
-  FadeIn,
-  FadeOut,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 import { COLORS } from "../utils/theme";
 import RadarWidget from "../components/game/RadarWidget";
@@ -63,16 +54,6 @@ export default function ARGameplayScreen() {
 
   const spawnRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const jupiterPoolRef = useRef<JupiterTokenItem[]>([]);
-
-  const scan = useSharedValue(0);
-  useEffect(() => {
-    scan.value = withRepeat(withTiming(1, { duration: 2200, easing: Easing.linear }), -1, false);
-  }, [scan]);
-
-  const scanLineStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: scan.value * (H * 0.55) }],
-    opacity: 0.45 + motion * 0.25,
-  }));
 
   useEffect(() => {
     Accelerometer.setUpdateInterval(220);
@@ -175,7 +156,6 @@ export default function ARGameplayScreen() {
           <Text style={styles.preSub}>
             Open your camera, detect nearby virtual tokens, tap to capture. Listed on Jupiter = safe; not listed = scam.
           </Text>
-          <Text style={styles.preHint}>80% real tokens (Jupiter), 20% fake — catch the scams.</Text>
           <View style={{ height: 16 }} />
           <NeonButton
             title="Start AR Hunt"
@@ -232,7 +212,7 @@ export default function ARGameplayScreen() {
           <View style={[styles.corner, styles.tr]} />
           <View style={[styles.corner, styles.bl]} />
           <View style={[styles.corner, styles.br]} />
-          <Animated.View style={[styles.scanLine, scanLineStyle]} />
+          <View style={styles.scanLine} />
         </View>
 
         {/* Floating tokens */}
@@ -288,36 +268,15 @@ export default function ARGameplayScreen() {
 }
 
 function ARTokenView({ token, onPress }: { token: ARToken; onPress: () => void }) {
-  const float = useSharedValue(0);
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    float.value = withRepeat(withTiming(1, { duration: 1700 + Math.random() * 900, easing: Easing.inOut(Easing.quad) }), -1, true);
-  }, [float]);
-
-  const anim = useAnimatedStyle(() => ({
-    transform: [{ translateY: -6 + float.value * 12 }, { scale: scale.value }],
-  }));
-
-  const pulse = useAnimatedStyle(() => ({
-    opacity: 0.35 * (1 - float.value),
-    transform: [{ scale: 1 + float.value * 0.8 }],
-  }));
-
   const coinBg = useMemo(() => `hsla(${token.hue}, 85%, 55%, 0.26)`, [token.hue]);
   const coinBorder = useMemo(() => `hsla(${token.hue}, 85%, 60%, 0.45)`, [token.hue]);
   const coinText = useMemo(() => `hsl(${token.hue} 85% 78%)`, [token.hue]);
 
   return (
-    <Animated.View entering={FadeIn} exiting={FadeOut} style={[styles.tokenWrap, { left: token.x, top: token.y }, anim]}>
+    <View style={[styles.tokenWrap, { left: token.x, top: token.y }]}>
       <Pressable
-        onPress={async () => {
-          scale.value = withSpring(1.15, { damping: 14, stiffness: 260 });
-          setTimeout(() => (scale.value = withSpring(1, { damping: 14, stiffness: 260 })), 140);
-          onPress();
-        }}
+        onPress={onPress}
       >
-        <Animated.View pointerEvents="none" style={[styles.pulseRing, { borderColor: COLORS.neonGreen }, pulse]} />
         <View style={[styles.coin, { backgroundColor: coinBg, borderColor: coinBorder, shadowColor: coinBorder }]}>
           <Text style={[styles.coinText, { color: coinText }]}>{token.symbol.slice(0, 2)}</Text>
         </View>
@@ -325,7 +284,7 @@ function ARTokenView({ token, onPress }: { token: ARToken; onPress: () => void }
           <Text style={styles.distText}>{token.distanceM}m</Text>
         </View>
       </Pressable>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -423,7 +382,6 @@ const styles = StyleSheet.create({
   },
 
   tokenWrap: { position: "absolute", zIndex: 20 },
-  pulseRing: { position: "absolute", left: -18, top: -18, right: -18, bottom: -18, borderRadius: 999, borderWidth: 1 },
   coin: {
     width: 64,
     height: 64,

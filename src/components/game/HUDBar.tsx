@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -8,8 +8,10 @@ import { useGameStore } from "../../store/gameStore";
 
 export default function HUDBar() {
   const insets = useSafeAreaInsets();
-  const { level, xp, totalCaptures } = useGameStore();
+  const { level, xp, walletConnected, walletAddress } = useGameStore();
   const xpInLevel = xp % 100;
+  const shortAddress =
+    walletConnected && walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : "";
 
   return (
     <View style={[styles.wrap, { paddingTop: Math.max(insets.top, 10) }]}>
@@ -30,8 +32,9 @@ export default function HUDBar() {
           <Ionicons name="flash" size={14} color={COLORS.electricPurple} />
           <Text style={[styles.hud, { color: COLORS.electricPurple }]}>{xp} XP</Text>
         </View>
-        <View style={styles.pill}>
-          <Text style={[styles.hud, { color: COLORS.neonGreen }]}>{totalCaptures} 🪙</Text>
+        <View style={styles.walletBox}>
+          <Image source={require("../../../assets/images/image.jpeg")} style={styles.logo} resizeMode="contain" />
+          {shortAddress ? <Text style={styles.addr}>{shortAddress}</Text> : null}
         </View>
       </View>
     </View>
@@ -81,12 +84,17 @@ const styles = StyleSheet.create({
   right: { flexDirection: "row", alignItems: "center", gap: 10 },
   xpRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   hud: { color: COLORS.textMuted, fontSize: 11, fontWeight: "900", letterSpacing: 1.2 },
-  pill: {
+  walletBox: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 16,
     backgroundColor: "rgba(0,255,163,0.08)",
     borderWidth: 1,
     borderColor: "rgba(0,255,163,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
   },
+  logo: { width: 26, height: 26 },
+  addr: { color: COLORS.neonGreen, fontSize: 10, fontWeight: "900", letterSpacing: 1.1 },
 });
