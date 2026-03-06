@@ -44,6 +44,20 @@ interface GameState {
   // Tokens
   capturedTokens: CapturedToken[];
   captureToken: (token: CapturedToken) => void;
+
+  // Multi-token rewards
+  tokenCounts: Record<string, number>;
+  allowedRewardSymbols: string[];
+  setAllowedRewardSymbols: (symbols: string[]) => void;
+
+  // Claim
+  collectedTokens: number;
+  claimEligible: boolean;
+  walletConnected: boolean;
+  walletAddress: string | null;
+  claimSubmitted: boolean;
+  connectWallet: () => void;
+  submitClaim: () => void;
   
   // Scan history
   scanHistory: ScanResult[];
@@ -71,7 +85,13 @@ export const useGameStore = create<GameState>()(
         set({ isAuthed: true, username: name?.trim() ? name.trim() : "CyberHunter" });
         get().claimDailyLogin();
       },
-      signOut: () => set({ isAuthed: false }),
+      signOut: () =>
+        set({
+          isAuthed: false,
+          walletConnected: false,
+          walletAddress: null,
+          claimSubmitted: false,
+        }),
 
       username: 'CyberHunter',
       setUsername: (name) => set({ username: name }),
@@ -88,9 +108,18 @@ export const useGameStore = create<GameState>()(
       capturedTokens: [],
       captureToken: (token) => {
         const state = get();
+        const newCollected = state.collectedTokens + 1;
+        const key = token.symbol || token.name;
+        const nextTokenCounts = {
+          ...state.tokenCounts,
+          [key]: (state.tokenCounts[key] ?? 0) + 1,
+        };
         set({
           capturedTokens: [token, ...state.capturedTokens],
           totalCaptures: state.totalCaptures + 1,
+          collectedTokens: newCollected,
+          claimEligible: newCollected >= 5,
+          tokenCounts: nextTokenCounts,
         });
       },
       
@@ -112,6 +141,30 @@ export const useGameStore = create<GameState>()(
       totalCaptures: 0,
       accuracy: 50,
       streak: 0,
+
+      tokenCounts: {},
+      allowedRewardSymbols: [],
+      setAllowedRewardSymbols: (symbols) => set({ allowedRewardSymbols: symbols }),
+
+      collectedTokens: 0,
+      claimEligible: false,
+      walletConnected: false,
+      walletAddress: null,
+      claimSubmitted: false,
+      connectWallet: () => {
+        const fakeAddress = Math.random().toString(36).slice(2, 18);
+        set({
+          walletConnected: true,
+          walletAddress: fakeAddress,
+        });
+      },
+      submitClaim: () => {
+        const state = get();
+        if (!state.walletConnected || state.collectedTokens < 5) return;
+        set({
+          claimSubmitted: true,
+        });
+      },
       
       lastLoginDate: null,
       claimDailyLogin: () => {
@@ -138,6 +191,13 @@ export const useGameStore = create<GameState>()(
         accuracy: state.accuracy,
         streak: state.streak,
         lastLoginDate: state.lastLoginDate,
+        tokenCounts: state.tokenCounts,
+        allowedRewardSymbols: state.allowedRewardSymbols,
+        collectedTokens: state.collectedTokens,
+        claimEligible: state.claimEligible,
+        walletConnected: state.walletConnected,
+        walletAddress: state.walletAddress,
+        claimSubmitted: state.claimSubmitted,
       }),
     }
   )

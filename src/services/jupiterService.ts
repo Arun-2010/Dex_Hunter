@@ -129,6 +129,60 @@ export async function fetchRandomJupiterTokens(
   }
 }
 
+const MEME_FALLBACK_SYMBOLS = ["BONK", "WIF", "PEPE", "FARTCOIN", "POPCAT", "MEW", "MOG", "NEIRO", "TOSHI", "DUKO", "ACT", "GOAT", "HODL", "SLERF", "GOAT"];
+
+/**
+ * Fetch exactly 15 meme/trending coins from Jupiter for AR Hunt and Rewards.
+ * Uses toptrending when available, otherwise recent tokens; fallback to known meme list.
+ */
+export async function fetchMemeCoins(limit: number = 15): Promise<JupiterTokenItem[]> {
+  const hue = () => Math.floor(Math.random() * 360);
+  const mapItem = (t: { id?: string; name?: string; symbol?: string; address?: string }, i: number): JupiterTokenItem => ({
+    id: (t as { address?: string }).address ?? t.id ?? `jup-${Date.now()}-${i}`,
+    name: String(t.name ?? "Unknown").slice(0, 24),
+    symbol: String(t.symbol ?? "??").slice(0, 8),
+    hue: hue(),
+  });
+
+  try {
+    const res = await fetch(`${LITE_BASE}/toptrending?interval=24h&limit=${limit}`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : [];
+      if (list.length >= limit) {
+        return list.slice(0, limit).map(mapItem);
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    const res = await fetch(`${LITE_BASE}/recent`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : [];
+      const shuffled = [...list].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, limit).map(mapItem);
+    }
+  } catch {
+    // ignore
+  }
+
+  return MEME_FALLBACK_SYMBOLS.slice(0, limit).map((symbol, i) => ({
+    id: `fallback-meme-${Date.now()}-${i}`,
+    name: symbol,
+    symbol,
+    hue: hue(),
+  }));
+}
+
 function fallbackTokens(limit: number): JupiterTokenItem[] {
   const names = ["SOL", "USDC", "BONK", "JUP", "WIF", "RAY", "ORCA", "MNGO"];
   return names.slice(0, limit).map((symbol, i) => ({

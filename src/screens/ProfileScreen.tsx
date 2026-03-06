@@ -71,9 +71,9 @@ export default function ProfileScreen() {
               </View>
             ) : (
               <View style={{ gap: 10 }}>
-                {capturedTokens.slice(0, 12).map((t) => (
+                {capturedTokens.slice(0, 12).map((t, index) => (
                   <TokenCard
-                    key={t.id}
+                    key={`${t.id}-${index}`}
                     name={t.name}
                     symbol={t.symbol}
                     hue={t.imageHue}

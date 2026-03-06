@@ -6,6 +6,7 @@ import type { MainTabParamList } from "./types";
 import HomeScreen from "../screens/HomeScreen";
 import ARGameplayScreen from "../screens/ARGameplayScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import ClaimScreen from "../screens/ClaimScreen";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -27,6 +28,7 @@ export default function MainTabs() {
           let name: keyof typeof Ionicons.glyphMap = "home";
           if (route.name === "Home") name = focused ? "home" : "home-outline";
           if (route.name === "Hunt") name = focused ? "aperture" : "aperture-outline";
+          if (route.name === "Claim") name = focused ? "gift" : "gift-outline";
           if (route.name === "Profile") name = focused ? "person" : "person-outline";
           return <Ionicons name={name} size={size} color={color} />;
         },
@@ -34,6 +36,7 @@ export default function MainTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Hunt" component={ARGameplayScreen} />
+      <Tab.Screen name="Claim" component={ClaimScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

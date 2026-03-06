@@ -23,8 +23,7 @@ import ScreenBackground from "../components/layout/ScreenBackground";
 import CaptureAnimation from "../components/game/CaptureAnimation";
 import {
   checkTokenListed,
-  fetchRandomJupiterTokens,
-  generateFakeToken,
+  fetchMemeCoins,
   type JupiterTokenItem,
 } from "../services/jupiterService";
 import { useGameStore } from "../store/gameStore";
@@ -51,7 +50,7 @@ function rand(min: number, max: number) {
 
 export default function ARGameplayScreen() {
   const insets = useSafeAreaInsets();
-  const { addXP, captureToken } = useGameStore();
+  const { addXP, captureToken, walletConnected, walletAddress, connectWallet, setAllowedRewardSymbols } = useGameStore();
   const [perm, requestPerm] = useCameraPermissions();
 
   const [hunting, setHunting] = useState(false);
@@ -90,10 +89,11 @@ export default function ARGameplayScreen() {
       const r = await requestPerm();
       if (!r.granted) return;
     }
-    const pool = await fetchRandomJupiterTokens(40);
+    const pool = await fetchMemeCoins(15);
     jupiterPoolRef.current = pool.length > 0 ? pool : [];
+    setAllowedRewardSymbols(pool.map((t) => t.symbol));
     setHunting(true);
-  }, [perm?.granted, requestPerm]);
+  }, [perm?.granted, requestPerm, setAllowedRewardSymbols]);
 
   const stopHunt = useCallback(() => {
     setHunting(false);
@@ -107,10 +107,8 @@ export default function ARGameplayScreen() {
 
     spawnRef.current = setInterval(() => {
       const pool = jupiterPoolRef.current;
-      const useReal = Math.random() < 0.8 && pool.length > 0;
-      const base = useReal
-        ? pool[Math.floor(Math.random() * pool.length)]
-        : generateFakeToken();
+      if (pool.length === 0) return;
+      const base = pool[Math.floor(Math.random() * pool.length)];
       const t: ARToken = {
         id: base.id,
         name: base.name,
@@ -164,6 +162,10 @@ export default function ARGameplayScreen() {
   );
 
   const visibleCount = useMemo(() => tokens.filter((t) => t.visible).length, [tokens]);
+  const shortAddress = useMemo(
+    () => (walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : ""),
+    [walletAddress]
+  );
 
   if (!hunting) {
     return (
@@ -208,9 +210,20 @@ export default function ARGameplayScreen() {
             <Ionicons name="crosshair" size={14} color={COLORS.neonGreen} />
             <Text style={styles.hudTitleText}>AR HUNT</Text>
           </View>
-          <View style={styles.countPill}>
-            <Text style={styles.countText}>{visibleCount} 🪙</Text>
-          </View>
+          {walletConnected ? (
+            <View style={styles.walletPill}>
+              <View style={styles.walletDot} />
+              <View>
+                <Text style={styles.walletStatus}>Wallet Connected</Text>
+                {shortAddress ? <Text style={styles.walletAddr}>{shortAddress}</Text> : null}
+              </View>
+            </View>
+          ) : (
+            <Pressable onPress={connectWallet} style={styles.walletConnect}>
+              <Ionicons name="wallet" size={14} color={COLORS.neonGreen} />
+              <Text style={styles.walletConnectText}>Connect Wallet</Text>
+            </Pressable>
+          )}
         </View>
 
         {/* Scanning frame */}
@@ -225,8 +238,8 @@ export default function ARGameplayScreen() {
         {/* Floating tokens */}
         {tokens
           .filter((t) => t.visible)
-          .map((t) => (
-            <ARTokenView key={t.id} token={t} onPress={() => capture(t)} />
+          .map((t, index) => (
+            <ARTokenView key={`${t.id}-${index}`} token={t} onPress={() => capture(t)} />
           ))}
 
         {fx ? (
@@ -343,15 +356,37 @@ const styles = StyleSheet.create({
   },
   hudTitle: { flexDirection: "row", alignItems: "center", gap: 8 },
   hudTitleText: { color: COLORS.neonGreen, fontWeight: "900", letterSpacing: 2.1, fontSize: 11 },
-  countPill: {
+  walletConnect: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: "rgba(0,255,163,0.10)",
     borderWidth: 1,
-    borderColor: "rgba(0,255,163,0.18)",
+    borderColor: "rgba(0,255,163,0.25)",
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
-  countText: { color: COLORS.neonGreen, fontWeight: "900", letterSpacing: 1.2 },
+  walletConnectText: { color: COLORS.neonGreen, fontSize: 11, fontWeight: "900", letterSpacing: 1.4 },
+  walletPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(0,255,163,0.25)",
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  walletDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+    backgroundColor: COLORS.neonGreen,
+  },
+  walletStatus: { color: COLORS.neonGreen, fontSize: 11, fontWeight: "900", letterSpacing: 1.4 },
+  walletAddr: { color: COLORS.textMuted, fontSize: 11, marginTop: 2 },
 
   frame: {
     position: "absolute",

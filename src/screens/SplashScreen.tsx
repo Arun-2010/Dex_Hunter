@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
@@ -15,6 +15,7 @@ export default function SplashScreen() {
   const navigation = useNavigation<Nav>();
   const { isAuthed } = useGameStore();
   const [hydrated, setHydrated] = useState(() => useGameStore.persist.hasHydrated());
+  const [animDone, setAnimDone] = useState(false);
 
   const t = useSharedValue(0);
 
@@ -25,12 +26,14 @@ export default function SplashScreen() {
 
   useEffect(() => {
     t.value = withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) });
-    if (!hydrated) return;
-    const timer = setTimeout(() => {
-      navigation.replace(isAuthed ? "Main" : "Auth");
-    }, 1100);
+    const timer = setTimeout(() => setAnimDone(true), 920);
     return () => clearTimeout(timer);
-  }, [hydrated, isAuthed, navigation, t]);
+  }, [t]);
+
+  useEffect(() => {
+    if (!hydrated || !animDone) return;
+    navigation.replace(isAuthed ? "Main" : "Auth");
+  }, [animDone, hydrated, isAuthed, navigation]);
 
   const titleStyle = useAnimatedStyle(() => ({
     opacity: 0.2 + t.value * 0.8,
@@ -45,6 +48,7 @@ export default function SplashScreen() {
   return (
     <ScreenBackground>
       <View style={styles.wrap}>
+        <Image source={require("../../assets/images/image.jpeg")} style={styles.logo} resizeMode="contain" />
         <Animated.View style={titleStyle}>
           <Text style={styles.kicker}>SOLANA DEX QUEST</Text>
           <Text style={styles.title}>
@@ -64,6 +68,7 @@ export default function SplashScreen() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 22 },
+  logo: { width: 120, height: 120, marginBottom: 24 },
   kicker: { color: COLORS.textMuted, letterSpacing: 2.6, fontSize: 11, fontWeight: "700" },
   title: {
     marginTop: 10,
