@@ -61,10 +61,6 @@ export default function HomeScreen() {
             <View style={{ height: 14 }} />
             <View style={styles.statsRow}>
               <View style={styles.stat}>
-                <Text style={styles.statNum}>{totalScans}</Text>
-                <Text style={styles.statLabel}>Scans</Text>
-              </View>
-              <View style={styles.stat}>
                 <Text style={styles.statNum}>{totalCaptures}</Text>
                 <Text style={styles.statLabel}>Captures</Text>
               </View>

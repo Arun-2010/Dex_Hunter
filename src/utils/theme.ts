@@ -4,6 +4,7 @@ export const COLORS = {
   neonGreen: "#00FFA3",
   electricPurple: "#7B5CFF",
   dangerRed: "#FF3B3B",
+  gold: "#FFD700",
   text: "rgba(255,255,255,0.92)",
   textMuted: "rgba(255,255,255,0.65)",
   glass: "rgba(255,255,255,0.06)",

@@ -37,7 +37,7 @@ export default function SplashScreen() {
 
   const titleStyle = useAnimatedStyle(() => ({
     opacity: 0.2 + t.value * 0.8,
-    transform: [{ translateY: (1 - t.value) * 14 }, { scale: 0.98 + t.value * 0.02 }],
+    transform: [{ translateY: (1 - t.value) * 14 }, { scale: 0.98 + t.value * 0.02 }] as any,
   }));
 
   const barStyle = useAnimatedStyle(() => ({

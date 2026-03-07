@@ -32,10 +32,8 @@ export default function HUDBar() {
           <Ionicons name="flash" size={14} color={COLORS.electricPurple} />
           <Text style={[styles.hud, { color: COLORS.electricPurple }]}>{xp} XP</Text>
         </View>
-        <View style={styles.walletBox}>
-          <Image source={require("../../../assets/images/image.jpeg")} style={styles.logo} resizeMode="contain" />
-          {shortAddress ? <Text style={styles.addr}>{shortAddress}</Text> : null}
-        </View>
+        <Image source={require("../../../assets/images/image.jpeg")} style={styles.logo} resizeMode="contain" />
+        {shortAddress ? <Text style={styles.addr}>{shortAddress}</Text> : null}
       </View>
     </View>
   );
@@ -81,20 +79,9 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 0 },
   },
-  right: { flexDirection: "row", alignItems: "center", gap: 10 },
+  right: { flexDirection: "row", alignItems: "center", gap: 8 },
   xpRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   hud: { color: COLORS.textMuted, fontSize: 11, fontWeight: "900", letterSpacing: 1.2 },
-  walletBox: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: "rgba(0,255,163,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(0,255,163,0.18)",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-  },
-  logo: { width: 26, height: 26 },
+  logo: { width: 32, height: 32 },
   addr: { color: COLORS.neonGreen, fontSize: 10, fontWeight: "900", letterSpacing: 1.1 },
 });

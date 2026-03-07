@@ -31,6 +31,7 @@ type ARToken = {
   y: number;
   distanceM: number;
   visible: boolean;
+  isFake?: boolean;
 };
 
 type Result = Awaited<ReturnType<typeof checkTokenListed>>;
@@ -38,6 +39,15 @@ type Result = Awaited<ReturnType<typeof checkTokenListed>>;
 function rand(min: number, max: number) {
   return min + Math.random() * (max - min);
 }
+
+// Fake coins that don't count towards rewards
+const fakeCoins = [
+  { id: "fake-1", name: "Ghost Token", symbol: "GHOST", hue: 280 },
+  { id: "fake-2", name: "Shadow Coin", symbol: "SHDW", hue: 220 },
+  { id: "fake-3", name: "Phantom Finance", symbol: "PHANT", hue: 300 },
+  { id: "fake-4", name: "Mystic Token", symbol: "MYST", hue: 260 },
+  { id: "fake-5", name: "Void Coin", symbol: "VOID", hue: 240 },
+];
 
 export default function ARGameplayScreen() {
   const insets = useSafeAreaInsets();
@@ -88,18 +98,40 @@ export default function ARGameplayScreen() {
 
     spawnRef.current = setInterval(() => {
       const pool = jupiterPoolRef.current;
-      if (pool.length === 0) return;
-      const base = pool[Math.floor(Math.random() * pool.length)];
-      const t: ARToken = {
-        id: base.id,
-        name: base.name,
-        symbol: base.symbol,
-        hue: base.hue,
-        x: rand(28, W - 88),
-        y: rand(120 + insets.top, H - 260),
-        distanceM: Math.max(3, Math.round(rand(8, 120) - motionRef.current * 14)),
-        visible: true,
-      };
+      let t: ARToken;
+      
+      // 30% chance to spawn a fake coin
+      if (Math.random() < 0.3) {
+        const fakeCoin = fakeCoins[Math.floor(Math.random() * fakeCoins.length)];
+        t = {
+          id: fakeCoin.id,
+          name: fakeCoin.name,
+          symbol: fakeCoin.symbol,
+          hue: fakeCoin.hue,
+          x: rand(28, W - 88),
+          y: rand(120 + insets.top, H - 260),
+          distanceM: Math.max(3, Math.round(rand(8, 120) - motionRef.current * 14)),
+          visible: true,
+          isFake: true,
+        };
+      } else if (pool.length > 0) {
+        // Spawn real token
+        const base = pool[Math.floor(Math.random() * pool.length)];
+        t = {
+          id: base.id,
+          name: base.name,
+          symbol: base.symbol,
+          hue: base.hue,
+          x: rand(28, W - 88),
+          y: rand(120 + insets.top, H - 260),
+          distanceM: Math.max(3, Math.round(rand(8, 120) - motionRef.current * 14)),
+          visible: true,
+          isFake: false,
+        };
+      } else {
+        return; // No tokens to spawn
+      }
+      
       setTokens((prev) => [...prev.filter((p) => p.visible).slice(-4), t]);
     }, 2600);
 
@@ -122,21 +154,34 @@ export default function ARGameplayScreen() {
         // no-op: haptics not available
       }
 
-      const analysis = await checkTokenListed(t.symbol, t.name);
-
-      captureToken({
-        id: t.id,
-        name: analysis.tokenName,
-        symbol: analysis.symbol,
-        riskScore: analysis.riskScore,
-        category: analysis.category,
-        capturedAt: Date.now(),
-        xpEarned: 20,
-        imageHue: t.hue,
-      });
-      addXP(20);
-
-      setResult({ token: t, analysis });
+      if (t.isFake) {
+        // Fake coins give XP but don't get added to captured tokens
+        addXP(10); // Less XP for fake coins
+        setResult({ token: t, analysis: { 
+          tokenName: t.name, 
+          symbol: t.symbol, 
+          riskScore: 50, 
+          category: 'SCAM',
+          reasons: ['This is a fake token that doesn\'t count towards rewards'],
+          listed: false
+        }});
+      } else {
+        // Real tokens get full analysis and are added to captured tokens
+        const analysis = await checkTokenListed(t.symbol, t.name);
+        captureToken({
+          id: t.id,
+          name: analysis.tokenName,
+          symbol: analysis.symbol,
+          riskScore: analysis.riskScore,
+          category: analysis.category,
+          capturedAt: Date.now(),
+          xpEarned: 20,
+          imageHue: t.hue,
+        });
+        addXP(20);
+        setResult({ token: t, analysis });
+      }
+      
       setCapturingId(null);
     },
     [addXP, captureToken, capturingId]
@@ -187,7 +232,7 @@ export default function ARGameplayScreen() {
             <Ionicons name="close" size={18} color={COLORS.text} />
           </Pressable>
           <View style={styles.hudTitle}>
-            <Ionicons name="crosshair" size={14} color={COLORS.neonGreen} />
+            <Ionicons name="radio" size={14} color={COLORS.neonGreen} />
             <Text style={styles.hudTitleText}>AR HUNT</Text>
           </View>
           {walletConnected ? (
@@ -199,7 +244,7 @@ export default function ARGameplayScreen() {
               </View>
             </View>
           ) : (
-            <Pressable onPress={connectWallet} style={styles.walletConnect}>
+            <Pressable onPress={() => connectWallet("0x1234567890abcdef1234567890", "1")} style={styles.walletConnect}>
               <Ionicons name="wallet" size={14} color={COLORS.neonGreen} />
               <Text style={styles.walletConnectText}>Connect Wallet</Text>
             </Pressable>
@@ -250,7 +295,7 @@ export default function ARGameplayScreen() {
                 <View style={{ height: 12 }} />
                 <RiskGauge score={result.analysis.riskScore} category={result.analysis.category} size={150} />
                 <View style={{ height: 10 }} />
-                <Text style={styles.modalXP}>+20 XP</Text>
+                <Text style={styles.modalXP}>+{result.token.isFake ? '10' : '20'} XP</Text>
                 <View style={{ height: 14 }} />
                 <NeonButton
                   title="Continue Hunt"

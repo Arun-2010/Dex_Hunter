@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { StyleSheet, Text, View, ScrollView } from "react-native";
+import React, { useMemo, useState } from "react";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import ScreenBackground from "../components/layout/ScreenBackground";
@@ -12,16 +12,20 @@ import { useGameStore } from "../store/gameStore";
 const REQUIRED_TOKENS = 5;
 
 export default function ClaimScreen() {
+  const [claimedTokens, setClaimedTokens] = useState<Set<string>>(new Set());
   const {
     collectedTokens,
     capturedTokens,
     allowedRewardSymbols,
-    walletConnected,
-    walletAddress,
     claimSubmitted,
-    connectWallet,
-    submitClaim,
+    claimTokenReward,
+    claimedRewards,
   } = useGameStore();
+
+  const handleClaimToken = (tokenSymbol: string, tokenName: string) => {
+    claimTokenReward(tokenSymbol, tokenName);
+    setClaimedTokens(prev => new Set([...prev, tokenSymbol]));
+  };
 
   const progress = Math.min(1, collectedTokens / REQUIRED_TOKENS);
   const remaining = Math.max(0, REQUIRED_TOKENS - collectedTokens);
@@ -52,10 +56,14 @@ export default function ClaimScreen() {
     const progress = tokenProgress;
     if (!allowedRewardSymbols || allowedRewardSymbols.length === 0) return progress;
     const set = new Set(allowedRewardSymbols.map((s) => s.toUpperCase()));
-    return Object.fromEntries(
+    const filtered = Object.fromEntries(
       Object.entries(progress).filter(([key]) => set.has(key.toUpperCase()))
     );
-  }, [tokenProgress, allowedRewardSymbols]);
+    // Remove claimed tokens from progress
+    return Object.fromEntries(
+      Object.entries(filtered).filter(([key]) => !claimedTokens.has(key))
+    );
+  }, [tokenProgress, allowedRewardSymbols, claimedTokens]);
 
   const statusMessage = useMemo(() => {
     if (claimSubmitted) {
@@ -64,14 +72,8 @@ export default function ClaimScreen() {
     if (!claimEligible) {
       return `Collect ${remaining} more tokens to unlock claim eligibility`;
     }
-    if (!walletConnected) {
-      return "Claim unlocked. Connect a wallet to submit.";
-    }
-    if (!claimSubmitted) {
-      return "Wallet connected. Submit your claim to join the sponsor list.";
-    }
-    return "";
-  }, [claimEligible, claimSubmitted, remaining, walletConnected]);
+    return "Claim unlocked. Click Claim Status to submit your claim.";
+  }, [claimEligible, claimSubmitted, remaining]);
 
   return (
     <ScreenBackground>
@@ -87,29 +89,51 @@ export default function ClaimScreen() {
               {Object.keys(tokenProgressFiltered).length > 0 ? (
                 Object.entries(tokenProgressFiltered).map(([key, info]) => {
                   const label = info.name || info.symbol || key;
+                  const isCompleted = info.count >= REQUIRED_TOKENS;
                   return (
-                    <View key={key} style={styles.tokenCard}>
-                      <View style={styles.rowBetween}>
-                        <Text style={styles.tokenName}>{label}</Text>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                          {info.count >= REQUIRED_TOKENS ? (
-                            <Text style={styles.tokenUnlocked}>Unlocked</Text>
-                          ) : null}
-                          <Text style={styles.tokenCount}>
-                            {info.count} / {REQUIRED_TOKENS}
-                          </Text>
+                    <View key={key}>
+                      <View style={styles.tokenCard}>
+                        <View style={styles.rowBetween}>
+                          <Text style={styles.tokenName}>{label}</Text>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                            {isCompleted ? (
+                              <Text style={styles.tokenUnlocked}>Unlocked</Text>
+                            ) : null}
+                            <Text style={styles.tokenCount}>
+                              {info.count} / {REQUIRED_TOKENS}
+                            </Text>
+                          </View>
                         </View>
+                        <View style={styles.tokenProgressTrack}>
+                          <View
+                            style={[styles.tokenProgressFill, { width: `${Math.min(1, info.count / REQUIRED_TOKENS) * 100}%` }]}
+                          />
+                        </View>
+                        <Text style={styles.tokenStatus}>
+                          {isCompleted
+                            ? "Claim unlocked for this token."
+                            : `Collect ${Math.max(0, REQUIRED_TOKENS - info.count)} more to unlock claim for this token.`}
+                        </Text>
                       </View>
-                      <View style={styles.tokenProgressTrack}>
-                        <View
-                          style={[styles.tokenProgressFill, { width: `${Math.min(1, info.count / REQUIRED_TOKENS) * 100}%` }]}
-                        />
-                      </View>
-                      <Text style={styles.tokenStatus}>
-                        {info.count >= REQUIRED_TOKENS
-                          ? "Claim unlocked for this token."
-                          : `Collect ${Math.max(0, REQUIRED_TOKENS - info.count)} more to unlock claim for this token.`}
-                      </Text>
+                      {isCompleted && (
+                        <View style={{ marginTop: 12 }}>
+                          <GlassCard glow="green">
+                            <Text style={styles.section}>CLAIM PROGRESS</Text>
+                            <View style={styles.claimContent}>
+                              <Text style={styles.claimTokenName}>{label}</Text>
+                              <TouchableOpacity style={styles.claimButtonContainer} onPress={() => handleClaimToken(key, label)}>
+                                <Ionicons name="wallet" size={16} color={COLORS.gold} />
+                                <Text style={styles.claimButtonText}>Claim Status</Text>
+                              </TouchableOpacity>
+                              {claimedTokens.has(key) && (
+                                <Text style={styles.claimMessage}>
+                                  Your wallet has been added to the sponsor reward list. Please wait for distribution.
+                                </Text>
+                              )}
+                            </View>
+                          </GlassCard>
+                        </View>
+                      )}
                     </View>
                   );
                 })
@@ -124,85 +148,34 @@ export default function ClaimScreen() {
           </GlassCard>
         </View>
 
-        <View style={{ marginTop: 16 }}>
-          <GlassCard glow="green">
-            <Text style={styles.section}>WALLET</Text>
-            {!walletConnected ? (
-              <>
-                <Text style={styles.small}>
-                  Connect a wallet to receive sponsor rewards. This is a mock connection only — no real funds move.
-                </Text>
-                <View style={{ height: 16 }} />
-                <NeonButton
-                  title="Connect Wallet"
-                  fullWidth
-                  onPress={connectWallet}
-                  left={<Ionicons name="wallet" size={18} color={COLORS.neonGreen} />}
-                  disabled={!claimEligible}
-                />
-                {!claimEligible ? (
-                  <Text style={styles.helper}>Earn at least {REQUIRED_TOKENS} tokens to enable claiming.</Text>
-                ) : null}
-              </>
-            ) : (
-              <View>
-                <View style={styles.rowBetween}>
-                  <View style={styles.walletRow}>
-                    <View style={styles.walletIcon}>
-                      <Ionicons name="wallet" size={16} color={COLORS.neonGreen} />
+        {claimedRewards.length > 0 && (
+          <View style={{ marginTop: 24 }}>
+            <Text style={styles.sectionTitle}>CLAIMED REWARDS</Text>
+            <View style={{ marginTop: 12, gap: 12 }}>
+              {claimedRewards.map((reward) => (
+                <GlassCard key={reward.id} glow="green">
+                  <View style={styles.claimedRewardCard}>
+                    <View style={styles.claimedRewardLeft}>
+                      <Text style={styles.giftIcon}>🎁</Text>
                     </View>
-                    <View>
-                      <Text style={styles.walletLabel}>Connected wallet</Text>
-                      <Text style={styles.walletValue}>{walletAddress}</Text>
+                    <View style={styles.claimedRewardCenter}>
+                      <Text style={styles.claimedRewardTokenName}>{reward.tokenName}</Text>
+                      <Text style={styles.claimedRewardMessage}>
+                        Your wallet has been added to the sponsor reward list. Please wait for distribution.
+                      </Text>
+                    </View>
+                    <View style={styles.claimedRewardRight}>
+                      <View style={styles.claimedBadge}>
+                        <Ionicons name="checkmark" size={12} color={COLORS.neonGreen} />
+                        <Text style={styles.claimedBadgeText}>Claimed</Text>
+                      </View>
                     </View>
                   </View>
-                  <View style={styles.connectedPill}>
-                    <View style={styles.dot} />
-                    <Text style={styles.connectedText}>CONNECTED</Text>
-                  </View>
-                </View>
-
-                {!claimSubmitted ? (
-                  <View style={{ marginTop: 18 }}>
-                    <NeonButton
-                      title="Submit Claim"
-                      fullWidth
-                      onPress={submitClaim}
-                      left={<Ionicons name="rocket" size={18} color={COLORS.electricPurple} />}
-                      variant="purple"
-                      disabled={!claimEligible}
-                    />
-                  </View>
-                ) : (
-                  <View style={styles.successCard}>
-                    <Ionicons name="checkmark-circle" size={20} color={COLORS.neonGreen} />
-                    <View style={{ marginLeft: 10 }}>
-                      <Text style={styles.successTitle}>Claim submitted successfully.</Text>
-                      <Text style={styles.successSub}>Your wallet has been added to the sponsor reward list.</Text>
-                    </View>
-                  </View>
-                )}
-              </View>
-            )}
-          </GlassCard>
-        </View>
-
-        {claimEligible && !claimSubmitted ? (
-          <View style={{ marginTop: 12 }}>
-            <GlassCard>
-              <View style={styles.row}>
-                <Text style={styles.celebrate}>🎉 Claim Unlocked</Text>
-              </View>
-            </GlassCard>
+                </GlassCard>
+              ))}
+            </View>
           </View>
-        ) : claimSubmitted ? (
-          <View style={{ marginTop: 12 }}>
-            <GlassCard>
-              <Text style={styles.section}>CLAIM</Text>
-              <Text style={styles.small}>✅ Claim Submitted{"\n"}Sponsor will distribute rewards soon.</Text>
-            </GlassCard>
-          </View>
-        ) : null}
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -325,5 +298,54 @@ const styles = StyleSheet.create({
   successSub: { color: COLORS.textMuted, marginTop: 2, fontSize: 12 },
   row: { flexDirection: "row", alignItems: "center" },
   celebrate: { color: COLORS.text, fontSize: 16, fontWeight: "900" },
+  claimContent: { marginTop: 12 },
+  claimTokenName: { color: COLORS.text, fontSize: 16, fontWeight: "900", marginBottom: 12 },
+  claimButtonContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 215, 0, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 215, 0, 0.4)",
+    marginBottom: 12,
+  },
+  claimButtonText: { color: COLORS.gold, fontSize: 14, fontWeight: "900", letterSpacing: 1.2 },
+  claimMessage: { color: COLORS.textMuted, fontSize: 12, lineHeight: 18, textAlign: "center" },
+  sectionTitle: { color: COLORS.textMuted, fontSize: 11, fontWeight: "900", letterSpacing: 2.2, marginBottom: 8 },
+  claimedRewardCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  claimedRewardLeft: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  giftIcon: { fontSize: 24 },
+  claimedRewardCenter: {
+    flex: 1,
+    gap: 4,
+  },
+  claimedRewardTokenName: { color: COLORS.text, fontSize: 14, fontWeight: "900" },
+  claimedRewardMessage: { color: COLORS.textMuted, fontSize: 11, lineHeight: 16 },
+  claimedRewardRight: {
+    alignItems: "center",
+  },
+  claimedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(0,255,163,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(0,255,163,0.25)",
+  },
+  claimedBadgeText: { color: COLORS.neonGreen, fontSize: 10, fontWeight: "900", letterSpacing: 1.1 },
 });
 

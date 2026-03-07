@@ -16,7 +16,9 @@ import type { MainTabParamList, RootStackParamList } from "../navigation/types";
 
 export default function ProfileScreen() {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList, "Profile">>();
-  const { username, level, xp, accuracy, streak, totalCaptures, totalScans, capturedTokens, signOut } = useGameStore();
+  const { username, level, xp, accuracy, streak, totalCaptures, totalScans, capturedTokens, walletAddress, signOut } = useGameStore();
+
+  const shortAddress = walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : "";
 
   return (
     <ScreenBackground>
@@ -43,11 +45,14 @@ export default function ProfileScreen() {
           </View>
 
           <View style={{ height: 14 }} />
-          <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <Text style={styles.statNum}>{totalScans}</Text>
-              <Text style={styles.statLabel}>Scans</Text>
+
+          {walletAddress && (
+            <View style={{ height: 14 }}>
+              <Text style={styles.walletAddress}>{shortAddress}</Text>
             </View>
+          )}
+
+          <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statNum}>{totalCaptures}</Text>
               <Text style={styles.statLabel}>Captures</Text>
@@ -146,6 +151,7 @@ const styles = StyleSheet.create({
   stat: { alignItems: "center", flex: 1 },
   statNum: { color: COLORS.text, fontSize: 18, fontWeight: "900" },
   statLabel: { color: COLORS.textMuted, marginTop: 2, fontSize: 11, letterSpacing: 1.1 },
+  walletAddress: { color: COLORS.neonGreen, fontSize: 12, fontWeight: "800", textAlign: "center" },
   empty: { paddingVertical: 18, alignItems: "center", gap: 10 },
   emptyText: { color: COLORS.textMuted, fontWeight: "800" },
 });

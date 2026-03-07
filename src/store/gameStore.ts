@@ -13,6 +13,13 @@ export interface CapturedToken {
   imageHue: number;
 }
 
+export interface ClaimedReward {
+  id: string;
+  tokenName: string;
+  tokenSymbol: string;
+  claimedAt: number;
+}
+
 export interface ScanResult {
   tokenName: string;
   riskScore: number;
@@ -55,9 +62,17 @@ interface GameState {
   claimEligible: boolean;
   walletConnected: boolean;
   walletAddress: string | null;
+  walletChainId: string | null;
   claimSubmitted: boolean;
-  connectWallet: () => void;
+  walletModalVisible: boolean;
+  setWalletModalVisible: (visible: boolean) => void;
+  connectWallet: (address: string, chainId: string) => void;
+  disconnectWallet: () => void;
   submitClaim: () => void;
+  
+  // Claimed Rewards
+  claimedRewards: ClaimedReward[];
+  claimTokenReward: (tokenSymbol: string, tokenName: string) => void;
   
   // Scan history
   scanHistory: ScanResult[];
@@ -74,6 +89,16 @@ interface GameState {
   claimDailyLogin: () => boolean;
 }
 
+// Generate random username
+const generateRandomUsername = () => {
+  const prefixes = ["Cyber", "Neo", "Alpha", "Omega", "Delta", "Sigma", "Phoenix", "Shadow", "Storm", "Blaze"];
+  const suffixes = ["Hunter", "Rider", "Warrior", "Knight", "Phantom", "Ghost", "Ninja", "Samurai", "Viking", "Titan"];
+  const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  const randomSuffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+  const randomNum = Math.floor(Math.random() * 999) + 1;
+  return `${randomPrefix}${randomSuffix}${randomNum}`;
+};
+
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
@@ -82,7 +107,11 @@ export const useGameStore = create<GameState>()(
 
       isAuthed: false,
       signIn: (name) => {
-        set({ isAuthed: true, username: name?.trim() ? name.trim() : "CyberHunter" });
+        const finalUsername = name?.trim() ? name.trim() : generateRandomUsername();
+        set({ 
+          isAuthed: true, 
+          username: finalUsername
+        });
         get().claimDailyLogin();
       },
       signOut: () =>
@@ -90,10 +119,11 @@ export const useGameStore = create<GameState>()(
           isAuthed: false,
           walletConnected: false,
           walletAddress: null,
+          walletChainId: null,
           claimSubmitted: false,
         }),
 
-      username: 'CyberHunter',
+      username: generateRandomUsername(),
       setUsername: (name) => set({ username: name }),
       
       xp: 0,
@@ -150,12 +180,39 @@ export const useGameStore = create<GameState>()(
       claimEligible: false,
       walletConnected: false,
       walletAddress: null,
+      walletChainId: null,
       claimSubmitted: false,
-      connectWallet: () => {
-        const fakeAddress = Math.random().toString(36).slice(2, 18);
+      walletModalVisible: false,
+      setWalletModalVisible: (visible) => set({ walletModalVisible: visible }),
+      
+      // Claimed Rewards
+      claimedRewards: [],
+      claimTokenReward: (tokenSymbol: string, tokenName: string) => {
+        const state = get();
+        const newClaimedReward: ClaimedReward = {
+          id: `${tokenSymbol}-${Date.now()}`,
+          tokenName,
+          tokenSymbol,
+          claimedAt: Date.now(),
+        };
+        set({
+          claimedRewards: [newClaimedReward, ...state.claimedRewards],
+        });
+      },
+      
+      connectWallet: (address: string, chainId: string) => {
         set({
           walletConnected: true,
-          walletAddress: fakeAddress,
+          walletAddress: address,
+          walletChainId: chainId,
+          walletModalVisible: false,
+      });
+      },
+      disconnectWallet: () => {
+        set({
+          walletConnected: false,
+          walletAddress: null,
+          walletChainId: null,
         });
       },
       submitClaim: () => {
@@ -197,7 +254,10 @@ export const useGameStore = create<GameState>()(
         claimEligible: state.claimEligible,
         walletConnected: state.walletConnected,
         walletAddress: state.walletAddress,
+        walletChainId: state.walletChainId,
         claimSubmitted: state.claimSubmitted,
+        walletModalVisible: state.walletModalVisible,
+        claimedRewards: state.claimedRewards,
       }),
     }
   )

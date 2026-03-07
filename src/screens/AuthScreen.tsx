@@ -20,13 +20,22 @@ export default function AuthScreen() {
     return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
   }, [walletAddress]);
 
+  const handleSignIn = () => {
+    signIn(""); // Generate random username
+    navigation.replace("Main");
+  };
+
+  const handleConnectWallet = () => {
+    connectWallet("0x1234567890abcdef1234567890", "1");
+  };
+
   return (
     <ScreenBackground>
       <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View style={styles.header}>
           <View style={styles.badge}>
             <Ionicons name="shield-checkmark" size={16} color={COLORS.neonGreen} />
-            <Text style={styles.badgeText}>WALLET LOGIN (MOCK)</Text>
+            <Text style={styles.badgeText}>WALLET LOGIN</Text>
           </View>
           <Text style={styles.title}>Connect Wallet</Text>
           <Text style={styles.sub}>
@@ -42,7 +51,7 @@ export default function AuthScreen() {
             <>
               <NeonButton
                 title="Connect Wallet"
-                onPress={connectWallet}
+                onPress={handleConnectWallet}
                 fullWidth
                 left={<Ionicons name="wallet" size={18} color={COLORS.neonGreen} />}
               />
@@ -60,18 +69,14 @@ export default function AuthScreen() {
               <View style={{ height: 14 }} />
               <NeonButton
                 title="Enter DexHunter"
-                onPress={() => {
-                  signIn(walletAddress ?? "WalletUser");
-                  navigation.replace("Main");
-                }}
+                onPress={handleSignIn}
                 fullWidth
                 left={<Ionicons name="flash" size={18} color={COLORS.neonGreen} />}
               />
-              <Text style={styles.hint}>By continuing you accept the simulation protocol.</Text>
+              <Text style={styles.hint}>By continuing you accept simulation protocol.</Text>
             </>
           )}
         </GlassCard>
-
       </KeyboardAvoidingView>
     </ScreenBackground>
   );
@@ -104,4 +109,3 @@ const styles = StyleSheet.create({
   connectedTitle: { color: COLORS.text, fontWeight: "900" },
   connectedAddr: { color: COLORS.textMuted, marginTop: 2 },
 });
-
