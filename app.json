@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "DexHunter",
+    "slug": "ar-scam-quest",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#050814"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dexhunter.app"
+    },
+
+    "android": {
+      "softwareKeyboardLayoutMode": "pan",
+      "package": "com.dexhunter.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+
+    "plugins": [],
+
+    "extra": {
+      "eas": {
+        "projectId": "f55125d0-f355-4643-8fee-a6ad2a75fa9f"
+      }
+    }
+  }
+}
